@@ -415,6 +415,7 @@
     <script>
         // Глобальна змінна для зберігання даних користувачів
         let userDatabase = {};
+        let currentUserId = "2106431200"; // Default to Roman's ID for demo
 
         // Функція для завантаження даних з user_data.json
         async function loadUserData() {
@@ -430,55 +431,56 @@
                 loadProfileData();
             } catch (error) {
                 console.error('Помилка завантаження даних:', error);
-                alert('Помилка завантаження даних користувачів. Спробуйте оновити сторінку.');
+                // Use fallback data if fetch fails
+                userDatabase = {
+                    "2106431200": {
+                        "name": "роман",
+                        "format": "online",
+                        "specialty": "я бухгалтер",
+                        "help_description": "Я безкоштовно можу порахувати вам ваші грощі",
+                        "referal": "https://t.me/Wave_of_Kindness_bot?start=referal_2106431200",
+                        "came_from": "2106431200",
+                        "wave_proof": "https://t.me/Wave_of_Kindness_bot?start=referal_2106431200"
+                    },
+                    "7148034659": {
+                        "came_from": "2106431200",
+                        "wave_proof": "https://t.me/Wave_of_Kindness_bot?start=referal_2106431200",
+                        "name": "дмитро",
+                        "specialty": "я сантехнік",
+                        "help_description": "Я безкоштовно можу відремонтувати кран",
+                        "referal": "https://t.me/Wave_of_Kindness_bot?start=referal_7148034659",
+                        "user_wave_link": "https://t.me/Wave_of_Kindness_bot?start=referal_2106431200"
+                    }
+                };
+                loadProfileData();
+                alert('Використовуються тестові дані через помилку завантаження.');
             }
         }
-
-        // Імітація Telegram WebApp
-        const Telegram = {
-            WebApp: {
-                initDataUnsafe: {
-                    user: {
-                        id: "2106431200", // ID Романа як приклад
-                        first_name: "Роман",
-                        photo_url: "https://via.placeholder.com/150"
-                    }
-                },
-                showAlert: function(message) {
-                    alert(message);
-                },
-                openTelegramLink: function(url) {
-                    console.log("Opening Telegram link:", url);
-                    window.open(url, '_blank');
-                }
-            }
-        };
 
         // Функції для роботи профілю
         function copyReferralLink() {
             const input = document.getElementById('user-referral-input');
             input.select();
             document.execCommand('copy');
-            Telegram.WebApp.showAlert('Посилання скопійовано!');
+            alert('Посилання скопійовано!');
         }
 
         function editProfile() {
-            Telegram.WebApp.showAlert('Функція редагування профілю буде доступна найближчим часом');
+            alert('Функція редагування профілю буде доступна найближчим часом');
         }
 
         function shareProfile() {
             const referralLink = document.getElementById('user-referral-input').value;
             if (referralLink && referralLink !== 'Завантаження...') {
-                Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=Приєднуйся до Хвиль Добра!`);
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=Приєднуйся до Хвиль Добра!`, '_blank');
             } else {
-                Telegram.WebApp.showAlert('Зачекайте, поки завантажаться дані профілю');
+                alert('Зачекайте, поки завантажаться дані профілю');
             }
         }
 
         function loadProfileData() {
             // Отримуємо дані поточного користувача
-            const userId = Telegram.WebApp.initDataUnsafe.user.id.toString();
-            const userData = userDatabase[userId] || {};
+            const userData = userDatabase[currentUserId] || {};
 
             // Заповнюємо дані профілю
             document.getElementById('user-name').textContent = userData.name || 'Анонім';
@@ -486,14 +488,16 @@
             document.getElementById('user-specialty').textContent = userData.specialty || 'Не вказано';
             document.getElementById('user-format').textContent = userData.format === 'online' ? 'Онлайн' : 'Офлайн';
             document.getElementById('user-help').textContent = userData.help_description || 'Не вказано';
-            document.getElementById('user-referral-input').value = userData.referal || 'Не вказано';
+            document.getElementById('user-referral-input').value = userData.referal || 'https://t.me/Wave_of_Kindness_bot';
 
             if (userData.photo_url) {
                 document.getElementById('user-photo').src = userData.photo_url;
+            } else {
+                document.getElementById('user-photo').src = "https://via.placeholder.com/150";
             }
 
             // Визначаємо хто запросив користувача
-            if (userData.came_from) {
+            if (userData.came_from && userData.came_from !== currentUserId) {
                 const referrer = userDatabase[userData.came_from];
                 document.getElementById('user-came-from').textContent = referrer ? referrer.name : 'Невідомий користувач';
             } else {
@@ -506,7 +510,7 @@
 
             // Шукаємо користувачів, які прийшли за посиланням поточного користувача
             for (const id in userDatabase) {
-                if (userDatabase[id].came_from === userId) {
+                if (userDatabase[id].came_from === currentUserId) {
                     waveCount++;
                     referrals.push(userDatabase[id]);
                 }
@@ -542,7 +546,6 @@
                 return;
             }
 
-
             // Додаємо точки та мітки на хвилі
             referrals.forEach((ref, index) => {
                 // Декоративна точка на хвилі
@@ -557,7 +560,7 @@
                 label.classList.add('wave-label');
                 label.style.left = point.style.left;
                 label.style.bottom = '50px';
-                label.textContent = ref.name;
+                label.textContent = ref.name.split(' ')[0]; // Show only first name
                 container.appendChild(label);
 
                 // Додаємо до списку
@@ -566,6 +569,7 @@
 
                 const img = document.createElement('img');
                 img.src = ref.photo_url || 'https://via.placeholder.com/40';
+                img.alt = ref.name;
 
                 const info = document.createElement('div');
                 info.classList.add('wave-person-info');
