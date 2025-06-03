@@ -415,7 +415,16 @@
     <script>
         // Глобальна змінна для зберігання даних користувачів
         let userDatabase = {};
-        let currentUserId = "2106431200"; // Default to Roman's ID for demo
+        let currentUserId = null;
+
+        // Функція для отримання параметрів з URL
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                id: params.get('id'),
+                photo: params.get('photo')
+            };
+        }
 
         // Функція для завантаження даних з user_data.json
         async function loadUserData() {
@@ -426,6 +435,23 @@
                 }
                 userDatabase = await response.json();
                 console.log('Дані успішно завантажені:', userDatabase);
+
+                // Отримуємо параметри з URL
+                const urlParams = getUrlParams();
+
+                // Встановлюємо поточного користувача
+                if (urlParams.id && userDatabase[urlParams.id]) {
+                    currentUserId = urlParams.id;
+
+                    // Якщо передано фото, оновлюємо його в базі даних
+                    if (urlParams.photo) {
+                        userDatabase[currentUserId].photo_url = urlParams.photo;
+                    }
+                } else {
+                    // Якщо ID не передано або не знайдено, використовуємо демо-дані
+                    currentUserId = "2106431200"; // Default to Roman's ID for demo
+                    alert('ID користувача не знайдено. Використовуються демо-дані.');
+                }
 
                 // Після завантаження даних оновлюємо профіль
                 loadProfileData();
@@ -452,6 +478,22 @@
                         "user_wave_link": "https://t.me/Wave_of_Kindness_bot?start=referal_2106431200"
                     }
                 };
+
+                // Отримуємо параметри з URL
+                const urlParams = getUrlParams();
+
+                // Встановлюємо поточного користувача
+                if (urlParams.id && userDatabase[urlParams.id]) {
+                    currentUserId = urlParams.id;
+
+                    // Якщо передано фото, оновлюємо його в базі даних
+                    if (urlParams.photo) {
+                        userDatabase[currentUserId].photo_url = urlParams.photo;
+                    }
+                } else {
+                    currentUserId = "2106431200"; // Default to Roman's ID for demo
+                }
+
                 loadProfileData();
                 alert('Використовуються тестові дані через помилку завантаження.');
             }
@@ -490,9 +532,11 @@
             document.getElementById('user-help').textContent = userData.help_description || 'Не вказано';
             document.getElementById('user-referral-input').value = userData.referal || 'https://t.me/Wave_of_Kindness_bot';
 
+            // Встановлюємо фото профілю (з параметрів URL або з бази даних)
             if (userData.photo_url) {
                 document.getElementById('user-photo').src = userData.photo_url;
             } else {
+                // Якщо фото немає в базі, можна використати граватар або інший сервіс
                 document.getElementById('user-photo').src = "https://via.placeholder.com/150";
             }
 
